@@ -7,7 +7,7 @@
     <File Path="README.md" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/ByteGuard.FileValidator.Extensions.DependencyInjection.Tests.Unit/ByteGuard.FileValidator.Extensions.DependencyInjection.Tests.Unit.csproj" />
+    <Project Path="tests/FileValidator.Extensions.DependencyInjection.Tests.Unit/FileValidator.Extensions.DependencyInjection.Tests.Unit.csproj" />
   </Folder>
   <Project Path="src/ByteGuard.FileValidator.Extensions.DependencyInjection/ByteGuard.FileValidator.Extensions.DependencyInjection.csproj" />
 </Solution>
