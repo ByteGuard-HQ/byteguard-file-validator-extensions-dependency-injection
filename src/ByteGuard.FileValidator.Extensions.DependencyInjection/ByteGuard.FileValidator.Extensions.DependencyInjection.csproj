@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
-    <Authors>ByteGuard Contributors, detilium</Authors>
+    <Authors>ByteGuard Contributors</Authors>
     <Description>ByteGuard File Validator support for Microsoft.Extensions.DependencyInjection.</Description>
     <PackageProjectUrl>https://github.com/ByteGuard-HQ/byteguard-file-validator-extensions-dependency-injection</PackageProjectUrl>
     <RepositoryUrl>https://github.com/ByteGuard-HQ/byteguard-file-validator-extensions-dependency-injection</RepositoryUrl>
