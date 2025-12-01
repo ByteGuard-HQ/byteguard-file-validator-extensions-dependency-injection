@@ -9,18 +9,22 @@
     <RepositoryType>git</RepositoryType>
     <PackageTags>byteguard file-validator extensions dependency injection</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
     <Copyright>Copyright © ByteGuard Contributors</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ByteGuard.FileValidator" Version="1.0.0" />
+    <PackageReference Include="ByteGuard.FileValidator" Version="1.1.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
         <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+        <None Include="..\..\assets\icon.png" Pack="true" PackagePath="\" />
     </ItemGroup>
 
 </Project>
