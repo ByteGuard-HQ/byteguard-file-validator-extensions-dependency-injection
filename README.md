@@ -26,7 +26,6 @@ In your `Program.cs` (or `Startup.cs` in older projects), register the validator
 
 **Using inline configuration**
 ```csharp
-// Using inline configuration
 builder.Services.AddFileValidator(options => 
 {
     options.AllowFileTypes(FileExtensions.Pdf, FileExtensions.Jpg, FileExtensions.Png);
