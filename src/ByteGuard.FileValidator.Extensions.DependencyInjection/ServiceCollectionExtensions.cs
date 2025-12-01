@@ -27,7 +27,7 @@ public static class ServiceCollectionExtensions
     /// <param name="configuration">Configuration.</param>
     public static IServiceCollection AddFileValidator(this IServiceCollection services, IConfiguration configuration)
     {
-        return services.AddFileValidator(options => configuration.GetSection(DefaultSectionName).Bind(options));
+        return services.AddFileValidator(configuration, DefaultSectionName);
     }
 
     /// <summary>
@@ -38,47 +38,80 @@ public static class ServiceCollectionExtensions
     /// <param name="sectionName">Section name.</param>
     public static IServiceCollection AddFileValidator(this IServiceCollection services, IConfiguration configuration, string sectionName)
     {
-        return services.AddFileValidator(options => configuration.GetSection(sectionName).Bind(options));
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentException.ThrowIfNullOrEmpty(sectionName);
+
+        var section = configuration.GetSection(sectionName);
+        if (section is null)
+        {
+            throw new InvalidOperationException($"Configuration section '{sectionName}' not found.");
+        }
+
+        var settings = new FileValidatorSettingsConfiguration();
+        section.Bind(settings);
+
+        var scannerSection = section.GetSection("Scanner");
+        if (scannerSection.Exists())
+        {
+            var scannerType = scannerSection["ScannerType"];
+            if (string.IsNullOrWhiteSpace(scannerType))
+            {
+                throw new InvalidOperationException("ScannerType must be specified in the configuration section.");
+            }
+
+            settings.Scanner = new ScannerRegistration();
+            settings.Scanner.ScannerType = scannerType;
+            settings.Scanner.OptionsConfiguration = scannerSection.GetSection("Options");
+        }
+
+        ConfigureFromSettings(services, settings);
+        return services;
     }
 
     /// <summary>
     /// Adds the File Validator services to the specified <see cref="IServiceCollection"/> with custom configuration options.
     /// </summary>
     /// <param name="services">Service collection.</param>
-    /// <param name="options">Configuration options.</param>
+    /// <param name="options">File validator configuration.</param>
     public static IServiceCollection AddFileValidator(this IServiceCollection services, Action<FileValidatorSettingsConfiguration> options)
     {
-        ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(options);
 
-        // Validate and setup configuration options.
-        services.AddSingleton<IValidateOptions<FileValidatorConfiguration>,
-            FileValidatorConfigurationOptionsValidator>();
+        var settings = new FileValidatorSettingsConfiguration();
+        options(settings);
 
-        services.Configure(options);
+        ConfigureFromSettings(services, settings);
+        return services;
+    }
+
+    /// <summary>
+    /// Configures services from settings.
+    /// </summary>
+    /// <param name="services">Service collection.</param>
+    /// <param name="settings">File valiator settings.</param>
+    private static void ConfigureFromSettings(IServiceCollection services, FileValidatorSettingsConfiguration settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
 
         services.AddOptions<FileValidatorConfiguration>()
-            .Configure<IOptions<FileValidatorSettingsConfiguration>>((cfg, settings) =>
+            .Configure(config =>
             {
                 // Convert from FileValidatorSettingsConfiguration to FileValidatorConfiguration.
-                cfg.SupportedFileTypes = settings.Value.SupportedFileTypes;
-                cfg.ThrowExceptionOnInvalidFile = settings.Value.ThrowExceptionOnInvalidFile;
+                config.SupportedFileTypes = settings.SupportedFileTypes;
+                config.ThrowExceptionOnInvalidFile = settings.ThrowExceptionOnInvalidFile;
 
-                if (settings.Value.FileSizeLimit != -1)
+                if (settings.FileSizeLimit != -1)
                 {
-                    cfg.FileSizeLimit = settings.Value.FileSizeLimit;
+                    config.FileSizeLimit = settings.FileSizeLimit;
                 }
-                else if (!string.IsNullOrWhiteSpace(settings.Value.UnitFileSizeLimit))
+                else if (!string.IsNullOrWhiteSpace(settings.UnitFileSizeLimit))
                 {
-                    cfg.FileSizeLimit = ByteSize.Parse(settings.Value.UnitFileSizeLimit);
+                    config.FileSizeLimit = ByteSize.Parse(settings.UnitFileSizeLimit);
                 }
             })
             .ValidateOnStart();
 
-        // Register antimalware scanner.
-        var settings = new FileValidatorSettingsConfiguration();
-        options(settings);
-
+        // Register antimalware scanner (if any).
         RegisterConfiguredScanner(services, settings.Scanner);
 
         // Register the FileValidator service.
@@ -96,8 +129,6 @@ public static class ServiceCollectionExtensions
             // No antimalware scanner registered.
             return new FileValidator(configuration);
         });
-
-        return services;
     }
 
     /// <summary>
