@@ -44,4 +44,9 @@ public class FileValidatorSettingsConfiguration
     /// Whether to throw an exception if an unsupported/invalid file is encountered. Defaults to <c>true</c>.
     /// </summary>
     public bool ThrowExceptionOnInvalidFile { get; set; } = true;
+
+    /// <summary>
+    /// Configuration for the antimalware scanner to use.
+    /// </summary>
+    public ScannerRegistration? Scanner { get; set; }
 }

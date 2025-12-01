@@ -4,7 +4,7 @@
 
 It gives you: 
 - Extension methods to register the file validator in the DI container
-- Easy configuration via appsettings.json or fluent configuration in code
+- Easy configuration via `appsettings.json` or fluent configuration in code
 
 > This package is the `Microsoft.Extensions.DependencyInjection` integration layer.
 > The core validation logic lives in [`ByteGuard.FileValidator`](https://github.com/ByteGuard-HQ/byteguard-file-validator-net).
@@ -12,7 +12,7 @@ It gives you:
 ## Getting Started
 
 ### Installation
-This package is published and installed via NuGet.
+This package is published and installed via [NuGet](https://www.nuget.org/packages/ByteGuard.FileValidator.Extensions.DependencyInjection).
 
 Reference the package in your project:
 ```bash
@@ -24,20 +24,32 @@ dotnet add package ByteGuard.FileValidator.Extensions.DependencyInjection
 ### Add to DI container
 In your `Program.cs` (or `Startup.cs` in older projects), register the validator:
 
+**Using inline configuration**
 ```csharp
-using ByteGuard.FileValidator;
-using ByteGuard.FileValidator.Extensions.DependencyInjection;
-
 // Using inline configuration
 builder.Services.AddFileValidator(options => 
 {
     options.AllowFileTypes(FileExtensions.Pdf, FileExtensions.Jpg, FileExtensions.Png);
     options.FileSizeLimit = ByteSize.MegaBytes(25);
     options.ThrowOnInvalidFiles(false);
-});
 
-// Using configuration from appsettings.json
-builder.Services.AddFileValidator(options => configuration.GetSection("FileValidatorConfiguration").Bind(options));
+    // If an antimalware package has been added
+    options.Scanner = ScannerRegistration.Create<ScannerImplementation, ScannerImplementationOptions>(opts => 
+    {
+        // Refer to the individual scanner implementations for ScannerType value and possible options.
+        // ...
+    })
+});
+```
+
+**Using configuration from appsettings.json with default "FileValidator" section name**
+```csharp
+builder.Services.AddFileValidator(builder.Configuration);
+```
+
+**Using configuration from appsettings.json with custom section name**
+```csharp
+builder.Services.AddFileValidator(builder.Configuration, "MySection");
 ```
 
 ### Injection & Usage
@@ -75,6 +87,29 @@ It's possible to configure the `FileValidator` through `appsettings.json`.
     "FileSizeLimit": 26214400,
     "UnitFileSizeLimit": "25MB",
     "ThrowExceptionOnInvalidFile": true
+  }
+}
+```
+
+**With antimalware scanner**  
+It's possible to configure an antimalware scanner directly through `appsettings.json`.
+
+> ℹ️ _Refer to the individual scanner implementations for `ScannerType` value and possible options._
+
+```json
+{
+  "FileValidatorConfiguration": {
+    "SupportedFileTypes": [ ".pdf", ".jpg", ".png" ],
+    "FileSizeLimit": 26214400,
+    "UnitFileSizeLimit": "25MB",
+    "ThrowExceptionOnInvalidFile": true,
+    "Scanner": {
+      "ScannerType": "...",
+      "Options": {
+        "OptionA": "...",
+        "OptionB": "..."
+      }
+    }
   }
 }
 ```
