@@ -1,3 +1,5 @@
+﻿using ByteGuard.FileValidator.Configuration;
+
 namespace ByteGuard.FileValidator.Extensions.DependencyInjection.Configuration;
 
 /// <summary>
@@ -44,6 +46,11 @@ public class FileValidatorSettingsConfiguration
     /// Whether to throw an exception if an unsupported/invalid file is encountered. Defaults to <c>true</c>.
     /// </summary>
     public bool ThrowExceptionOnInvalidFile { get; set; } = true;
+
+    /// <summary>
+    /// Specific file type validation rules.
+    /// </summary>
+    public FileTypeRules FileTypeRules { get; set; } = new();
 
     /// <summary>
     /// Configuration for the antimalware scanner to use.

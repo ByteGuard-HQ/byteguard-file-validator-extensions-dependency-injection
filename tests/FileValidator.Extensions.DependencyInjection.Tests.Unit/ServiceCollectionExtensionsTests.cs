@@ -1,6 +1,7 @@
 ﻿using ByteGuard.FileValidator.Configuration;
 using ByteGuard.FileValidator.Extensions.DependencyInjection.Configuration;
 using ByteGuard.FileValidator.Scanners;
+using DocumentFormat.OpenXml;
 using FileValidator.Extensions.DependencyInjection.Tests.Unit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -87,6 +88,51 @@ public class ServiceCollectionExtensionsTests
         var sp = services.BuildServiceProvider();
         var options = sp.GetRequiredService<IOptions<FileValidatorConfiguration>>();
         Assert.Equal(ByteSize.MegaBytes(10), options.Value.FileSizeLimit);
+    }
+
+    [Fact(DisplayName = "AddFileValidator should set correct OdfRules if defined")]
+    public void AddFileValidator_OdfRulesSet_ShouldAddOdfRules()
+    {
+        // Arrange
+        var services = new ServiceCollection();
+        Action<FileValidatorSettingsConfiguration> configAction = options =>
+        {
+            options.SupportedFileTypes = [".pdf"];
+            options.UnitFileSizeLimit = "25MB";
+            options.FileTypeRules.OdfRules.RequireMimetype = false;
+        };
+
+        // Act
+        services.AddFileValidator(configAction);
+
+        // Assert
+        var sp = services.BuildServiceProvider();
+        var options = sp.GetRequiredService<IOptions<FileValidatorConfiguration>>();
+        Assert.False(options.Value.FileTypeRules.OdfRules.RequireMimetype);
+    }
+
+    [Fact(DisplayName = "AddFileValidator should set correct OpenXmlRules if defined")]
+    public void AddFileValidator_OpenXmlRulesSet_ShouldAddOpenXmlRules()
+    {
+        // Arrange
+        var expectedVersion = FileFormatVersions.Office2016;
+        var services = new ServiceCollection();
+        Action<FileValidatorSettingsConfiguration> configAction = options =>
+        {
+            options.SupportedFileTypes = [".pdf"];
+            options.UnitFileSizeLimit = "25MB";
+            options.FileTypeRules.OpenXmlRules.PerformConformanceValidation = true;
+            options.FileTypeRules.OpenXmlRules.ConformanceVersion = expectedVersion;
+        };
+
+        // Act
+        services.AddFileValidator(configAction);
+
+        // Assert
+        var sp = services.BuildServiceProvider();
+        var options = sp.GetRequiredService<IOptions<FileValidatorConfiguration>>();
+        Assert.True(options.Value.FileTypeRules.OpenXmlRules.PerformConformanceValidation);
+        Assert.Equal(expectedVersion, options.Value.FileTypeRules.OpenXmlRules.ConformanceVersion);
     }
 
     [Fact(DisplayName = "AddFileValidator should register the configured antimalware scanner")]
@@ -288,5 +334,38 @@ public class ServiceCollectionExtensionsTests
         var sp = services.BuildServiceProvider();
         var scanner = sp.GetRequiredService<IAntimalwareScanner>();
         Assert.IsType<MockAntimalwareScanner>(scanner);
+    }
+
+    [Theory(DisplayName = "AddFileValidator should set correct Open XML conformance version when configuration has been provided through appsettings.json")]
+    [InlineData(FileFormatVersions.Office2010)]
+    [InlineData(FileFormatVersions.Office2013)]
+    [InlineData(FileFormatVersions.Office2016)]
+    [InlineData(FileFormatVersions.Office2019)]
+    [InlineData(FileFormatVersions.Microsoft365)]
+    public void AddFileValidator_ConfigurationFromAppSettings_ShouldSetCorrectOpenXmlConformanceVersion(FileFormatVersions expected)
+    {
+        // Arrange
+        var services = new ServiceCollection();
+
+        var inMemorySettings = new Dictionary<string, string?>
+        {
+            {"FileValidator:SupportedFileTypes:0", ".pdf"},
+            {"FileValidator:UnitFileSizeLimit", "15MB"},
+            {"FileValidator:FileTypeRules:OpenXmlRules:PerformConformanceValidation", "true"},
+            {"FileValidator:FileTypeRules:OpenXmlRules:ConformanceVersion", expected.ToString()}
+        };
+
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(inMemorySettings.AsEnumerable())
+            .Build();
+
+        // Act
+        services.AddFileValidator(configuration);
+
+        // Assert
+        var sp = services.BuildServiceProvider();
+        var options = sp.GetRequiredService<IOptions<FileValidatorConfiguration>>().Value;
+        Assert.True(options.FileTypeRules.OpenXmlRules.PerformConformanceValidation);
+        Assert.Equal(expected, options.FileTypeRules.OpenXmlRules.ConformanceVersion);
     }
 }
