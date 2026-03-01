@@ -1,4 +1,4 @@
-using ByteGuard.FileValidator.Configuration;
+﻿using ByteGuard.FileValidator.Configuration;
 using ByteGuard.FileValidator.Extensions.DependencyInjection.Configuration;
 using ByteGuard.FileValidator.Scanners;
 using Microsoft.Extensions.Configuration;
@@ -108,6 +108,9 @@ public static class ServiceCollectionExtensions
                 {
                     config.FileSizeLimit = ByteSize.Parse(settings.UnitFileSizeLimit);
                 }
+
+                config.FileTypeRules.OdfRules = settings.FileTypeRules.OdfRules;
+                config.FileTypeRules.OpenXmlRules = settings.FileTypeRules.OpenXmlRules;
             })
             .ValidateOnStart();
 
